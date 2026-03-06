@@ -1,0 +1,166 @@
+PROJECT 1: Multi-Tenant Task Management Platform (Production-Grade)
+
+This is NOT a todo app. If you build it properly, it shows backend depth, system design, and scalability.
+
+1. Problem Statement
+
+Companies need a shared task management system where:
+
+Multiple organizations (tenants) coexist
+
+Data is isolated per tenant
+
+Users have different roles
+
+System scales horizontally
+
+Real-time collaboration is required
+
+2. High-Level Architecture
+Client (React)
+   |
+API Gateway (Nginx)
+   |
+Auth Service (JWT)
+   |
+Task Service (Node.js)
+   |
+Redis (Cache + Pub/Sub)
+   |
+MongoDB (Primary DB)
+   |
+WebSocket Server (Real-time)
+
+3. Core Features
+
+Multi-tenancy (Org-based isolation)
+
+Role-based access control (Admin, Manager, User)
+
+JWT + Refresh Token authentication
+
+Real-time task updates
+
+Caching and rate limiting
+
+Horizontal scalability
+
+4. Data Model (MongoDB)
+Organization
+{
+  "_id": "org_id",
+  "name": "Company A",
+  "plan": "enterprise",
+  "createdAt": "timestamp"
+}
+
+User
+{
+  "_id": "user_id",
+  "orgId": "org_id",
+  "email": "user@company.com",
+  "passwordHash": "...",
+  "role": "ADMIN | MANAGER | USER"
+}
+
+Task
+{
+  "_id": "task_id",
+  "orgId": "org_id",
+  "title": "Implement API",
+  "status": "TODO | IN_PROGRESS | DONE",
+  "assignedTo": "user_id",
+  "dueDate": "timestamp"
+}
+
+
+Indexing
+
+(orgId)
+
+(orgId, status)
+
+(assignedTo)
+
+5. Authentication Flow (JWT)
+
+User logs in
+
+Server issues:
+
+Access Token (15 min)
+
+Refresh Token (7 days)
+
+Refresh tokens stored hashed in DB
+
+Token rotation on refresh
+
+Logout = refresh token invalidation
+
+Why JWT?
+
+Stateless
+
+Horizontally scalable
+
+No session DB bottleneck
+
+6. Authorization (RBAC)
+Role	Permissions
+Admin	Manage users, tasks
+Manager	Create/assign tasks
+User	Update own tasks
+
+Implemented via:
+
+Middleware
+
+Permission maps
+
+Route-level guards
+
+7. Redis Usage (REAL reasons, not buzzwords)
+Use Cases
+
+Cache frequently accessed tasks
+
+Rate limiting (IP + user)
+
+Pub/Sub for real-time updates
+
+Cache Strategy
+
+Read-through cache
+
+TTL = 5 minutes
+
+Cache invalidation on write
+
+8. Real-Time Updates
+
+WebSockets per organization room
+
+Redis Pub/Sub broadcasts task changes
+
+Connected clients auto-sync
+
+Task Update → Redis Pub → WebSocket → Clients
+
+9. Scaling Strategy
+
+Stateless Node.js services
+
+MongoDB sharding by orgId
+
+Redis cluster
+
+Nginx load balancing
+
+10. Failure Handling
+
+Redis down → fallback to DB
+
+WebSocket reconnect logic
+
+Graceful token expiry handling
