@@ -1,6 +1,9 @@
 import { io } from 'socket.io-client';
 
-const WS_URL = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || '';
+const WS_URL = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL
+  || (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')
+    ? 'https://multi-tenant-task-management-platform-ui5w.onrender.com'
+    : '');
 
 let socket = null;
 

@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+// Use VITE_API_URL from env (set in Netlify). Fallback: Render URL when not on localhost.
+const API_BASE = import.meta.env.VITE_API_URL
+  || (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')
+    ? 'https://multi-tenant-task-management-platform-ui5w.onrender.com'
+    : '/api');
 
 const api = axios.create({
   baseURL: API_BASE,
