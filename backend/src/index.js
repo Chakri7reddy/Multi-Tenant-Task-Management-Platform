@@ -26,8 +26,17 @@ const io = new Server(server, {
 });
 setupWebSocket(io);
 
-app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
-app.use(cors({ origin: config.frontendOrigins, credentials: true }));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+app.use(cors({
+  origin: config.frontendOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/health', async (req, res) => {

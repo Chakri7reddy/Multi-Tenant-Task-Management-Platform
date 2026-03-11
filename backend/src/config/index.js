@@ -4,7 +4,7 @@ const isProd = process.env.NODE_ENV === 'production';
 
 function getFrontendOrigins() {
   const url = process.env.FRONTEND_URL || 'http://localhost:5173';
-  return url.split(',').map((u) => u.trim()).filter(Boolean);
+  return url.split(',').map((u) => u.trim().replace(/\/$/, '')).filter(Boolean);
 }
 
 function validateProduction() {
