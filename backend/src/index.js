@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const helmet = require('helmet');
 const config = require('./config');
 const { connectDb } = require('./config/db');
 const { redisHealth } = require('./config/redis');
@@ -20,13 +21,14 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: config.frontendUrl, credentials: true },
+  cors: { origin: config.frontendOrigins, credentials: true },
   path: '/ws',
 });
 setupWebSocket(io);
 
-app.use(cors({ origin: config.frontendUrl, credentials: true }));
-app.use(express.json());
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(cors({ origin: config.frontendOrigins, credentials: true }));
+app.use(express.json({ limit: '1mb' }));
 
 app.get('/health', async (req, res) => {
   const redisOk = await redisHealth();
@@ -41,9 +43,17 @@ app.use('/users', userRoutes);
 app.use('/tasks', taskRoutes);
 app.use('/notifications', notificationRoutes);
 
+app.use((req, res) => res.status(404).json({ error: 'Not found' }));
+
 app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ error: 'Internal server error' });
+  if (!res.headersSent) {
+    let status = err.status || err.statusCode || 500;
+    if (err.code === 'LIMIT_FILE_SIZE') status = 413;
+    if (err.code === 'LIMIT_UNEXPECTED_FILE') status = 400;
+    const msg = status >= 500 && config.isProd ? 'Internal server error' : (err.message || 'Error');
+    if (status >= 500) console.error(err);
+    res.status(status).json({ error: msg });
+  }
 });
 
 async function migrateAssignedToArray() {
@@ -61,10 +71,21 @@ async function migrateAssignedToArray() {
 async function start() {
   await connectDb();
   await migrateAssignedToArray();
-  server.listen(config.port, () => {
-    console.log(`Server running on http://localhost:${config.port}`);
+  server.listen(config.port, '0.0.0.0', () => {
+    console.log(`Server running on port ${config.port} (${config.nodeEnv})`);
   });
 }
+
+function gracefulShutdown(signal) {
+  console.log(`${signal} received, shutting down`);
+  server.close(() => {
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 start().catch((err) => {
   console.error(err);

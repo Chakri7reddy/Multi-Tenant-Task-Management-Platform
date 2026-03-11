@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -21,10 +21,11 @@ export default function Login() {
   const from = location.state?.from?.pathname;
   const redirectTo = from && from !== '/' && from !== '/login' ? from : '/dashboard';
 
-  if (user) {
-    navigate(redirectTo, { replace: true });
-    return null;
-  }
+  useEffect(() => {
+    if (user) navigate(redirectTo, { replace: true });
+  }, [user, redirectTo, navigate]);
+
+  if (user) return null;
 
   const handleLookup = async (e) => {
     e.preventDefault();

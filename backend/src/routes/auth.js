@@ -68,7 +68,8 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
     if (!isValidObjectId(orgId)) return res.status(400).json({ error: 'Invalid organization ID' });
     const result = await authService.requestPasswordReset(email, orgId);
     if (!result) return res.status(404).json({ error: 'User not found' });
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${result.token}`;
+    const base = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+    const resetUrl = `${base}/reset-password?token=${result.token}`;
     return res.json({ ok: true, resetUrl });
   } catch (err) {
     return res.status(500).json({ error: err.message });

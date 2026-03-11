@@ -8,8 +8,8 @@ function createRateLimiter(windowMs, max, keyPrefix = 'rl') {
     message: { error: 'Too many requests' },
     standardHeaders: true,
     keyGenerator: (req) => {
-      const userId = req.user?.id || req.ip;
-      return `${keyPrefix}:${userId}`;
+      const id = req.user?._id?.toString() || req.user?.id || req.ip || 'anon';
+      return `${keyPrefix}:${id}`;
     },
   });
 }

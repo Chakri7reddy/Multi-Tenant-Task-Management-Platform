@@ -3,13 +3,17 @@ const taskService = require('../services/taskService');
 
 const ORG_ROOM_PREFIX = 'org:';
 
+function trySubscribe(redisSub) {
+  redisSub.subscribe(taskService.CHANNEL_TASK, (err) => {
+    if (err) console.warn('Redis subscribe error:', err.message);
+  });
+}
+
 function setupWebSocket(io) {
   const redisSub = getRedisSubscriber();
-  redisSub.once('ready', () => {
-    redisSub.subscribe(taskService.CHANNEL_TASK, (err) => {
-      if (err) console.warn('Redis subscribe error:', err.message);
-    });
-  });
+  redisSub.once('ready', () => trySubscribe(redisSub));
+  redisSub.on('reconnecting', () => {});
+  redisSub.on('error', () => {});
   redisSub.on('message', (channel, message) => {
     if (channel !== taskService.CHANNEL_TASK) return;
     try {
