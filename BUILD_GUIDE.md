@@ -27,7 +27,7 @@ Optional for production-style setup:
 ### 1.1 Clone or create project folder
 
 ```bash
-cd d:\Users\chakridhar\Downloads\task
+cd d:\Users\Downloads\task
 ```
 
 ### 1.2 Install MongoDB & Redis (choose one)
